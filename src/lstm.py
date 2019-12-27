@@ -56,6 +56,10 @@ model.add(LSTM(128))
 model.add(Dropout(0.2))
 model.add(Dense(len(chars), activation='softmax'))
 
+# filename = "../models/weights-improvement-01-0.1288.hdf5"
+# model.load_weights(filename)
+# model.compile(loss='categorical_crossentropy', optimizer='adam')
+
 optimizer = Nadam(learning_rate=0.002, beta_1=0.9, beta_2=0.999)#RMSprop(learning_rate=0.01)
 model.compile(loss='categorical_crossentropy', optimizer=optimizer)
 
@@ -76,8 +80,8 @@ def on_epoch_end(epoch, _):
     print('----- Generating text after Epoch: %d' % epoch)
 
     start_index = random.randint(0, len(text) - maxlen - 1)
-    for diversity in [0.2, 0.5, 1.0, 1.2]:
-        diversity /= 10
+    for diversity in [0.5, 1.0, 1.2]:
+        # diversity /= 10
         # print('----- diversity:', diversity)
 
         generated = ''
@@ -87,7 +91,11 @@ def on_epoch_end(epoch, _):
         print('\n')
         # sys.stdout.write(generated)
 
-        for i in range(400):
+        # for i in range(400):
+        i = 0
+        next_char = ''
+        while i < maxlen and next_char != '\n':
+            i += 1
             x_pred = np.zeros((1, maxlen, len(chars)))
             for t, char in enumerate(sentence):
                 x_pred[0, t, char_indices[char]] = 1.
@@ -100,6 +108,7 @@ def on_epoch_end(epoch, _):
 
             sys.stdout.write(next_char)
             sys.stdout.flush()
+
         print()
 
 print_callback = LambdaCallback(on_epoch_end=on_epoch_end)
@@ -111,4 +120,4 @@ checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1, save_best_only
 model.fit(x, y,
           batch_size=128,
           epochs=60,
-          callbacks=[print_callback, es, checkpoint])
+          callbacks=[es, checkpoint, print_callback])
